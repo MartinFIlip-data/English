@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anglický Quiz — Pracovná Angličtina</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #273549;
+    --border: #334155;
+    --accent: #3b82f6;
+    --accent2: #6366f1;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 1.3rem; font-weight: 700; }
+  header span { background: var(--accent); color: #fff; font-size: 0.7rem; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
+
+  nav { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; }
+  nav button { background: none; border: none; color: var(--muted); padding: 14px 20px; font-size: 0.9rem; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+  nav button:hover:not(.active) { color: var(--text); }
+
+  .controls { padding: 16px 24px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .controls input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: var(--radius); font-size: 0.9rem; width: 220px; outline: none; }
+  .controls input:focus { border-color: var(--accent); }
+  .controls select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: var(--radius); font-size: 0.9rem; outline: none; cursor: pointer; }
+  .controls .count { margin-left: auto; color: var(--muted); font-size: 0.85rem; }
+
+  main { padding: 24px; }
+
+  /* CARDS */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; cursor: pointer; transition: border-color 0.2s, transform 0.1s; user-select: none; }
+  .card:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .card .sk { font-size: 0.95rem; font-weight: 500; margin-bottom: 10px; }
+  .card .cat { font-size: 0.72rem; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .card .en { font-size: 0.9rem; color: var(--green); display: none; border-top: 1px solid var(--border); padding-top: 10px; margin-top: 10px; }
+  .card.open .en { display: block; }
+  .card .hint { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+  .card.open .hint { display: none; }
+
+  /* QUIZ */
+  #quiz-section { max-width: 680px; margin: 0 auto; }
+  .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .quiz-header .score-box { display: flex; gap: 20px; }
+  .score-item { text-align: center; }
+  .score-item .val { font-size: 1.5rem; font-weight: 700; }
+  .score-item .lbl { font-size: 0.75rem; color: var(--muted); }
+  .score-item.correct .val { color: var(--green); }
+  .score-item.wrong .val { color: var(--red); }
+  .score-item.total .val { color: var(--accent); }
+
+  .quiz-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 20px; }
+  .quiz-card .qtype { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .quiz-card .question { font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; }
+  .quiz-card .qcat { font-size: 0.8rem; color: var(--muted); }
+
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 22px; }
+  .opt { background: var(--surface2); border: 2px solid var(--border); border-radius: var(--radius); padding: 14px; cursor: pointer; font-size: 0.9rem; transition: all 0.15s; text-align: left; color: var(--text); }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt.correct { border-color: var(--green); background: rgba(34,197,94,0.1); color: var(--green); }
+  .opt.wrong { border-color: var(--red); background: rgba(239,68,68,0.1); color: var(--red); }
+  .opt:disabled { cursor: default; }
+
+  .quiz-feedback { padding: 12px 16px; border-radius: var(--radius); font-size: 0.9rem; margin-top: 14px; display: none; }
+  .quiz-feedback.show { display: block; }
+  .quiz-feedback.ok { background: rgba(34,197,94,0.15); border: 1px solid var(--green); color: var(--green); }
+  .quiz-feedback.fail { background: rgba(239,68,68,0.15); border: 1px solid var(--red); color: var(--red); }
+
+  .btn { background: var(--accent); color: #fff; border: none; padding: 10px 24px; border-radius: var(--radius); font-size: 0.9rem; cursor: pointer; transition: opacity 0.2s; }
+  .btn:hover { opacity: 0.85; }
+  .btn.secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+  .btn-row { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+
+  .quiz-cat-select { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+  .quiz-cat-select button { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); padding: 5px 12px; border-radius: 99px; font-size: 0.8rem; cursor: pointer; }
+  .quiz-cat-select button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .progress-bar { background: var(--border); border-radius: 99px; height: 4px; margin-bottom: 20px; }
+  .progress-fill { background: var(--accent); height: 4px; border-radius: 99px; transition: width 0.3s; }
+
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+
+  .tab-section { display: none; }
+  .tab-section.active { display: block; }
+
+  @media (max-width: 600px) {
+    .options { grid-template-columns: 1fr; }
+    .controls { flex-direction: column; align-items: stretch; }
+    .controls input, .controls select { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🇬🇧 Anglický Quiz</h1>
+  <span>Pracovná Angličtina</span>
+</header>
+
+<nav>
+  <button class="active" onclick="switchTab('slovicka')">Slovíčka</button>
+  <button onclick="switchTab('vety')">Vety</button>
+  <button onclick="switchTab('kviz')">Kvíz</button>
+</nav>
+
+<div id="slovicka-section" class="tab-section active">
+  <div class="controls">
+    <input type="text" id="voc-search" placeholder="Hľadaj slovíčko..." oninput="renderVocab()">
+    <select id="voc-cat" onchange="renderVocab()">
+      <option value="">Všetky kategórie</option>
+    </select>
+    <span class="count" id="voc-count"></span>
+  </div>
+  <main><div class="grid" id="voc-grid"></div></main>
+</div>
+
+<div id="vety-section" class="tab-section">
+  <div class="controls">
+    <input type="text" id="sen-search" placeholder="Hľadaj vetu..." oninput="renderSentences()">
+    <select id="sen-cat" onchange="renderSentences()">
+      <option value="">Všetky kategórie</option>
+    </select>
+    <span class="count" id="sen-count"></span>
+  </div>
+  <main><div class="grid" id="sen-grid"></div></main>
+</div>
+
+<div id="kviz-section" class="tab-section">
+  <main>
+    <div id="quiz-section">
+      <div class="quiz-header">
+        <div>
+          <div style="font-size:1.1rem;font-weight:700">Kvíz</div>
+          <div style="font-size:0.8rem;color:var(--muted)" id="quiz-mode-label">Zmiešané slovíčka a vety</div>
+        </div>
+        <div class="score-box">
+          <div class="score-item correct"><div class="val" id="score-ok">0</div><div class="lbl">Správne</div></div>
+          <div class="score-item wrong"><div class="val" id="score-fail">0</div><div class="lbl">Chyby</div></div>
+          <div class="score-item total"><div class="val" id="score-total">0</div><div class="lbl">Celkom</div></div>
+        </div>
+      </div>
+
+      <div class="quiz-cat-select" id="quiz-cats"></div>
+
+      <div class="progress-bar"><div class="progress-fill" id="quiz-progress" style="width:0%"></div></div>
+
+      <div class="quiz-card">
+        <div class="qtype" id="q-type">Prelož do angličtiny</div>
+        <div class="question" id="q-text">—</div>
+        <div class="qcat" id="q-cat"></div>
+        <div class="options" id="q-options"></div>
+        <div class="quiz-feedback" id="q-feedback"></div>
+        <div class="btn-row">
+          <button class="btn secondary" onclick="skipQuestion()">Preskočiť</button>
+          <button class="btn" id="next-btn" onclick="nextQuestion()" style="display:none">Ďalšia →</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button class="btn secondary" onclick="resetScore()">Resetovať skóre</button>
+        <button class="btn secondary" onclick="toggleQuizMode()">Zmeniť smer</button>
+      </div>
+      <div style="text-align:center;margin-top:8px;font-size:0.8rem;color:var(--muted)" id="quiz-dir-label">SK → EN</div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+
+const VOCAB = [
+  // Kancelária a zariadenie
+  {sk:"správa", en:"report", cat:"Kancelária"},
+  {sk:"stretnutie / porada", en:"meeting", cat:"Kancelária"},
+  {sk:"kalendár", en:"calendar", cat:"Kancelária"},
+  {sk:"harmonogram", en:"schedule", cat:"Kancelária"},
+  {sk:"termín / lehota", en:"deadline", cat:"Kancelária"},
+  {sk:"priorita", en:"priority", cat:"Kancelária"},
+  {sk:"projekt", en:"project", cat:"Kancelária"},
+  {sk:"úloha", en:"task", cat:"Kancelária"},
+  {sk:"cieľ", en:"goal / objective", cat:"Kancelária"},
+  {sk:"míľnik", en:"milestone", cat:"Kancelária"},
+  {sk:"plán", en:"plan", cat:"Kancelária"},
+  {sk:"stratégia", en:"strategy", cat:"Kancelária"},
+  {sk:"postup / proces", en:"process", cat:"Kancelária"},
+  {sk:"pracovný tok", en:"workflow", cat:"Kancelária"},
+  {sk:"výstup", en:"output / deliverable", cat:"Kancelária"},
+  {sk:"výsledok", en:"result / outcome", cat:"Kancelária"},
+  {sk:"spätnä väzba", en:"feedback", cat:"Kancelária"},
+  {sk:"hodnotenie", en:"evaluation / review", cat:"Kancelária"},
+  {sk:"schôdza jeden na jedného", en:"one-on-one meeting", cat:"Kancelária"},
+  {sk:"program rokovania", en:"agenda", cat:"Kancelária"},
+  {sk:"zápisnica", en:"meeting minutes", cat:"Kancelária"},
+  {sk:"príloha", en:"attachment", cat:"Kancelária"},
+  {sk:"kópia (email)", en:"CC (carbon copy)", cat:"Kancelária"},
+  {sk:"skrytá kópia", en:"BCC (blind carbon copy)", cat:"Kancelária"},
+  {sk:"podpis", en:"signature", cat:"Kancelária"},
+
+  // Tím a ľudia
+  {sk:"kolega / kolegyňa", en:"colleague", cat:"Tím"},
+  {sk:"nadriadený / šéf", en:"manager / boss", cat:"Tím"},
+  {sk:"podriadený", en:"subordinate / direct report", cat:"Tím"},
+  {sk:"tím", en:"team", cat:"Tím"},
+  {sk:"oddelenie", en:"department", cat:"Tím"},
+  {sk:"zamestnávateľ", en:"employer", cat:"Tím"},
+  {sk:"zamestnanec", en:"employee", cat:"Tím"},
+  {sk:"stakeholder", en:"stakeholder", cat:"Tím"},
+  {sk:"klient", en:"client / customer", cat:"Tím"},
+  {sk:"dodávateľ", en:"vendor / supplier", cat:"Tím"},
+  {sk:"konzultant", en:"consultant", cat:"Tím"},
+  {sk:"vedúci projektu", en:"project manager", cat:"Tím"},
+  {sk:"analytik", en:"analyst", cat:"Tím"},
+  {sk:"vývojár", en:"developer", cat:"Tím"},
+  {sk:"dátový inžinier", en:"data engineer", cat:"Tím"},
+  {sk:"dátový vedec", en:"data scientist", cat:"Tím"},
+  {sk:"architekt riešení", en:"solutions architect", cat:"Tím"},
+  {sk:"testovacie inžinierstvo", en:"QA engineer", cat:"Tím"},
+
+  // Dáta a technológie
+  {sk:"databáza", en:"database", cat:"Dáta & Tech"},
+  {sk:"tabuľka", en:"table", cat:"Dáta & Tech"},
+  {sk:"dotaz", en:"query", cat:"Dáta & Tech"},
+  {sk:"schéma", en:"schema", cat:"Dáta & Tech"},
+  {sk:"príjem dát", en:"data ingestion", cat:"Dáta & Tech"},
+  {sk:"transformácia dát", en:"data transformation", cat:"Dáta & Tech"},
+  {sk:"pipeline", en:"pipeline", cat:"Dáta & Tech"},
+  {sk:"dátový sklad", en:"data warehouse", cat:"Dáta & Tech"},
+  {sk:"dátové jazero", en:"data lake", cat:"Dáta & Tech"},
+  {sk:"záloha", en:"backup", cat:"Dáta & Tech"},
+  {sk:"nasadenie", en:"deployment", cat:"Dáta & Tech"},
+  {sk:"produkčné prostredie", en:"production environment", cat:"Dáta & Tech"},
+  {sk:"testovacie prostredie", en:"testing / staging environment", cat:"Dáta & Tech"},
+  {sk:"chyba / bug", en:"bug / error", cat:"Dáta & Tech"},
+  {sk:"logovanie", en:"logging", cat:"Dáta & Tech"},
+  {sk:"monitorovanie", en:"monitoring", cat:"Dáta & Tech"},
+  {sk:"konfigurácia", en:"configuration", cat:"Dáta & Tech"},
+  {sk:"závislosť", en:"dependency", cat:"Dáta & Tech"},
+  {sk:"verzia", en:"version", cat:"Dáta & Tech"},
+  {sk:"vetvenie (git)", en:"branch", cat:"Dáta & Tech"},
+  {sk:"zlúčenie (git)", en:"merge", cat:"Dáta & Tech"},
+  {sk:"revízia kódu", en:"code review", cat:"Dáta & Tech"},
+  {sk:"automatizácia", en:"automation", cat:"Dáta & Tech"},
+  {sk:"orchestrácia", en:"orchestration", cat:"Dáta & Tech"},
+  {sk:"rozhranie (API)", en:"API (Application Programming Interface)", cat:"Dáta & Tech"},
+  {sk:"endpoint", en:"endpoint", cat:"Dáta & Tech"},
+  {sk:"odozva", en:"response", cat:"Dáta & Tech"},
+  {sk:"žiadosť", en:"request", cat:"Dáta & Tech"},
+  {sk:"overenie", en:"authentication / authorization", cat:"Dáta & Tech"},
+  {sk:"výkon", en:"performance", cat:"Dáta & Tech"},
+  {sk:"škálovanie", en:"scaling", cat:"Dáta & Tech"},
+  {sk:"oblak / cloud", en:"cloud", cat:"Dáta & Tech"},
+  {sk:"kontajner", en:"container", cat:"Dáta & Tech"},
+  {sk:"klaster", en:"cluster", cat:"Dáta & Tech"},
+
+  // Financie a obchod
+  {sk:"rozpočet", en:"budget", cat:"Financie"},
+  {sk:"náklady", en:"costs / expenses", cat:"Financie"},
+  {sk:"výnosy / príjmy", en:"revenue", cat:"Financie"},
+  {sk:"zisk", en:"profit", cat:"Financie"},
+  {sk:"strata", en:"loss", cat:"Financie"},
+  {sk:"investícia", en:"investment", cat:"Financie"},
+  {sk:"faktúra", en:"invoice", cat:"Financie"},
+  {sk:"platba", en:"payment", cat:"Financie"},
+  {sk:"zmluva", en:"contract", cat:"Financie"},
+  {sk:"ponuka", en:"offer / proposal", cat:"Financie"},
+  {sk:"dopyt", en:"demand", cat:"Financie"},
+  {sk:"trh", en:"market", cat:"Financie"},
+  {sk:"konkurencia", en:"competition", cat:"Financie"},
+  {sk:"podiel na trhu", en:"market share", cat:"Financie"},
+  {sk:"rast", en:"growth", cat:"Financie"},
+
+  // HR a pracovné podmienky
+  {sk:"dovolenka", en:"vacation / annual leave", cat:"HR"},
+  {sk:"práceneschopnosť", en:"sick leave", cat:"HR"},
+  {sk:"plat / mzda", en:"salary / wage", cat:"HR"},
+  {sk:"odmena / bonus", en:"bonus", cat:"HR"},
+  {sk:"pracovná zmluva", en:"employment contract", cat:"HR"},
+  {sk:"výpoveď", en:"resignation / termination", cat:"HR"},
+  {sk:"nástup", en:"onboarding / start date", cat:"HR"},
+  {sk:"školenie", en:"training", cat:"HR"},
+  {sk:"kariérny postup", en:"career advancement", cat:"HR"},
+  {sk:"pracovná pozícia", en:"job position / role", cat:"HR"},
+  {sk:"pracovná náplň", en:"job description", cat:"HR"},
+  {sk:"výberové konanie", en:"recruitment / hiring process", cat:"HR"},
+  {sk:"pohovor", en:"interview", cat:"HR"},
+  {sk:"referencia", en:"reference", cat:"HR"},
+  {sk:"životopis", en:"CV / resume", cat:"HR"},
+
+  // Konverzácia
+  {sk:"súhlasím", en:"I agree", cat:"Konverzácia"},
+  {sk:"nesúhlasím", en:"I disagree", cat:"Konverzácia"},
+  {sk:"určite / samozrejme", en:"certainly / of course", cat:"Konverzácia"},
+  {sk:"bohužiaľ", en:"unfortunately", cat:"Konverzácia"},
+  {sk:"napriek tomu", en:"nevertheless / however", cat:"Konverzácia"},
+  {sk:"čo sa týka...", en:"regarding... / as for...", cat:"Konverzácia"},
+  {sk:"na základe...", en:"based on...", cat:"Konverzácia"},
+  {sk:"v súlade s...", en:"in accordance with...", cat:"Konverzácia"},
+  {sk:"s ohľadom na...", en:"with regard to...", cat:"Konverzácia"},
+  {sk:"v skratke", en:"in short / in brief", cat:"Konverzácia"},
+  {sk:"na záver", en:"in conclusion / to conclude", cat:"Konverzácia"},
+  {sk:"navyše / okrem toho", en:"furthermore / moreover", cat:"Konverzácia"},
+  {sk:"napríklad", en:"for example / for instance", cat:"Konverzácia"},
+  {sk:"to znamená", en:"that means / i.e.", cat:"Konverzácia"},
+  {sk:"inými slovami", en:"in other words", cat:"Konverzácia"},
+  {sk:"podľa môjho názoru", en:"in my opinion", cat:"Konverzácia"},
+  {sk:"z môjho pohľadu", en:"from my perspective", cat:"Konverzácia"},
+  {sk:"presne tak", en:"exactly / precisely", cat:"Konverzácia"},
+  {sk:"mám na mysli...", en:"I mean...", cat:"Konverzácia"},
+  {sk:"to závisí od...", en:"it depends on...", cat:"Konverzácia"},
+
+  // Slovesá — pracovné
+  {sk:"implementovať", en:"to implement", cat:"Slovesá"},
+  {sk:"analyzovať", en:"to analyze", cat:"Slovesá"},
+  {sk:"optimalizovať", en:"to optimize", cat:"Slovesá"},
+  {sk:"monitorovať", en:"to monitor", cat:"Slovesá"},
+  {sk:"navrhnúť", en:"to design / to propose", cat:"Slovesá"},
+  {sk:"koordinovať", en:"to coordinate", cat:"Slovesá"},
+  {sk:"delegovať", en:"to delegate", cat:"Slovesá"},
+  {sk:"eskalovať", en:"to escalate", cat:"Slovesá"},
+  {sk:"komunikovať", en:"to communicate", cat:"Slovesá"},
+  {sk:"prezentovať", en:"to present", cat:"Slovesá"},
+  {sk:"zhodnocovať / hodnotiť", en:"to evaluate", cat:"Slovesá"},
+  {sk:"schváliť", en:"to approve", cat:"Slovesá"},
+  {sk:"zamietnuť", en:"to reject / to decline", cat:"Slovesá"},
+  {sk:"aktualizovať", en:"to update", cat:"Slovesá"},
+  {sk:"nasadiť (kód)", en:"to deploy", cat:"Slovesá"},
+  {sk:"testovať", en:"to test", cat:"Slovesá"},
+  {sk:"ladiť (debugging)", en:"to debug", cat:"Slovesá"},
+  {sk:"zálohovať", en:"to back up", cat:"Slovesá"},
+  {sk:"migrovať", en:"to migrate", cat:"Slovesá"},
+  {sk:"integrovať", en:"to integrate", cat:"Slovesá"},
+  {sk:"automatizovať", en:"to automate", cat:"Slovesá"},
+  {sk:"škálovať", en:"to scale", cat:"Slovesá"},
+  {sk:"konfigurovať", en:"to configure", cat:"Slovesá"},
+  {sk:"odstraňovať chyby", en:"to troubleshoot", cat:"Slovesá"},
+  {sk:"plánovať", en:"to plan / to schedule", cat:"Slovesá"},
+  {sk:"prideliť", en:"to assign / to allocate", cat:"Slovesá"},
+  {sk:"sledovať", en:"to track / to monitor", cat:"Slovesá"},
+  {sk:"porovnávať", en:"to compare", cat:"Slovesá"},
+  {sk:"zhrnúť", en:"to summarize", cat:"Slovesá"},
+  {sk:"odporučiť", en:"to recommend", cat:"Slovesá"},
+
+  // Prídavné mená — pracovné
+  {sk:"efektívny", en:"efficient / effective", cat:"Prídavné mená"},
+  {sk:"spoľahlivý", en:"reliable", cat:"Prídavné mená"},
+  {sk:"škálovateľný", en:"scalable", cat:"Prídavné mená"},
+  {sk:"robustný", en:"robust", cat:"Prídavné mená"},
+  {sk:"flexibilný", en:"flexible", cat:"Prídavné mená"},
+  {sk:"udržateľný", en:"maintainable / sustainable", cat:"Prídavné mená"},
+  {sk:"kritický", en:"critical", cat:"Prídavné mená"},
+  {sk:"urgentný", en:"urgent", cat:"Prídavné mená"},
+  {sk:"blokujúci", en:"blocking", cat:"Prídavné mená"},
+  {sk:"dokončený", en:"completed / done", cat:"Prídavné mená"},
+  {sk:"nevyriešený", en:"unresolved / open", cat:"Prídavné mená"},
+  {sk:"zastaraný", en:"outdated / deprecated", cat:"Prídavné mená"},
+  {sk:"experimentálny", en:"experimental", cat:"Prídavné mená"},
+  {sk:"automatizovaný", en:"automated", cat:"Prídavné mená"},
+  {sk:"manuálny", en:"manual", cat:"Prídavné mená"},
+  {sk:"interný", en:"internal", cat:"Prídavné mená"},
+  {sk:"externý", en:"external", cat:"Prídavné mená"},
+  {sk:"paralelný", en:"parallel", cat:"Prídavné mená"},
+  {sk:"sekvenčný", en:"sequential", cat:"Prídavné mená"},
+  {sk:"konzistentný", en:"consistent", cat:"Prídavné mená"},
+
+  // Podstatné mená — obecné pracovné
+  {sk:"príležitosť", en:"opportunity", cat:"Podstatné mená"},
+  {sk:"výzva", en:"challenge", cat:"Podstatné mená"},
+  {sk:"riziko", en:"risk", cat:"Podstatné mená"},
+  {sk:"dopad", en:"impact", cat:"Podstatné mená"},
+  {sk:"závislosť", en:"dependency", cat:"Podstatné mená"},
+  {sk:"bloker", en:"blocker", cat:"Podstatné mená"},
+  {sk:"riešenie", en:"solution", cat:"Podstatné mená"},
+  {sk:"obchádzka", en:"workaround", cat:"Podstatné mená"},
+  {sk:"záver / zhrnutie", en:"summary / conclusion", cat:"Podstatné mená"},
+  {sk:"akčné položky", en:"action items", cat:"Podstatné mená"},
+  {sk:"pokrok", en:"progress", cat:"Podstatné mená"},
+  {sk:"kapacita", en:"capacity", cat:"Podstatné mená"},
+  {sk:"záťaž", en:"workload", cat:"Podstatné mená"},
+  {sk:"priepustnosť", en:"throughput", cat:"Podstatné mená"},
+  {sk:"latencia", en:"latency", cat:"Podstatné mená"},
+  {sk:"dostupnosť", en:"availability", cat:"Podstatné mená"},
+  {sk:"spoľahlivosť", en:"reliability", cat:"Podstatné mená"},
+  {sk:"chybovosť", en:"error rate / failure rate", cat:"Podstatné mená"},
+  {sk:"metriky", en:"metrics", cat:"Podstatné mená"},
+  {sk:"KPI (kľúčový ukazovateľ výkonu)", en:"KPI (key performance indicator)", cat:"Podstatné mená"},
+  {sk:"šablóna", en:"template", cat:"Podstatné mená"},
+  {sk:"dokumentácia", en:"documentation", cat:"Podstatné mená"},
+  {sk:"špecifikácia", en:"specification", cat:"Podstatné mená"},
+  {sk:"požiadavka", en:"requirement", cat:"Podstatné mená"},
+  {sk:"závislosť", en:"dependency", cat:"Podstatné mená"},
+  {sk:"prostredie", en:"environment", cat:"Podstatné mená"},
+  {sk:"token / prístupový kľúč", en:"token / access key", cat:"Podstatné mená"},
+  {sk:"autentifikácia", en:"authentication", cat:"Podstatné mená"},
+  {sk:"oprávnenie", en:"authorization / permission", cat:"Podstatné mená"},
+  {sk:"prepojenie / integrácia", en:"integration", cat:"Podstatné mená"},
+];
+
+const SENTENCES = [
+  // Pozdravy a small talk
+  {sk:"Dobrý deň, ako sa máte?", en:"Good day, how are you?", cat:"Pozdravy"},
+  {sk:"Dobre, ďakujem. A vy?", en:"Fine, thank you. And you?", cat:"Pozdravy"},
+  {sk:"Ste to vy, s kým som komunikoval emailom?", en:"Are you the one I've been emailing with?", cat:"Pozdravy"},
+  {sk:"Tešíme sa na spoluprácu.", en:"We look forward to working together.", cat:"Pozdravy"},
+  {sk:"Aký máte plán na dnes?", en:"What's your plan for today?", cat:"Pozdravy"},
+  {sk:"Príjemný víkend!", en:"Have a nice weekend!", cat:"Pozdravy"},
+  {sk:"Ako prebehol víkend?", en:"How was your weekend?", cat:"Pozdravy"},
+  {sk:"Prepáčte, že vyrušujem.", en:"Sorry to bother you.", cat:"Pozdravy"},
+  {sk:"Máte chvíľu?", en:"Do you have a moment?", cat:"Pozdravy"},
+  {sk:"Volám sa Martin, som dátový inžinier.", en:"My name is Martin, I'm a data engineer.", cat:"Pozdravy"},
+  {sk:"Som nový člen tímu.", en:"I'm a new member of the team.", cat:"Pozdravy"},
+  {sk:"Rád vás spoznávam.", en:"Nice to meet you.", cat:"Pozdravy"},
+  {sk:"Ako dlho pracujete v tejto firme?", en:"How long have you been working at this company?", cat:"Pozdravy"},
+  {sk:"S čím sa zaoberáte?", en:"What do you work on?", cat:"Pozdravy"},
+  {sk:"Dnes je veľmi rušný deň.", en:"Today is a very busy day.", cat:"Pozdravy"},
+
+  // Stretnutia a porady
+  {sk:"Kedy sa môžeme stretnúť?", en:"When can we meet?", cat:"Stretnutia"},
+  {sk:"Môžeme si dohodnúť stretnutie?", en:"Can we schedule a meeting?", cat:"Stretnutia"},
+  {sk:"Pripojím sa k hovoru o desiatej.", en:"I'll join the call at ten.", cat:"Stretnutia"},
+  {sk:"Zdieľam obrazovku.", en:"I'm sharing my screen.", cat:"Stretnutia"},
+  {sk:"Ospravedlňujem sa, počujem ozvenu.", en:"I'm sorry, I hear an echo.", cat:"Stretnutia"},
+  {sk:"Môžete vypnúť mikrofón?", en:"Can you mute your microphone?", cat:"Stretnutia"},
+  {sk:"Stratil som vás. Môžete to zopakovať?", en:"I lost you. Can you repeat that?", cat:"Stretnutia"},
+  {sk:"Počúvam, pokračujte prosím.", en:"I'm listening, please continue.", cat:"Stretnutia"},
+  {sk:"Vráťme sa k téme.", en:"Let's get back on topic.", cat:"Stretnutia"},
+  {sk:"Môžem sa vyjadriť?", en:"May I add something?", cat:"Stretnutia"},
+  {sk:"Súhlasím s tým.", en:"I agree with that.", cat:"Stretnutia"},
+  {sk:"Čo je program stretnutia?", en:"What's the meeting agenda?", cat:"Stretnutia"},
+  {sk:"Pošlem vám pozvánku do kalendára.", en:"I'll send you a calendar invite.", cat:"Stretnutia"},
+  {sk:"Stretnutie je zrušené.", en:"The meeting is cancelled.", cat:"Stretnutia"},
+  {sk:"Presuňme stretnutie na zajtra.", en:"Let's move the meeting to tomorrow.", cat:"Stretnutia"},
+  {sk:"Zhrňme si záver stretnutia.", en:"Let's summarize the meeting outcomes.", cat:"Stretnutia"},
+  {sk:"Stretnutie trvá asi tridsať minút.", en:"The meeting takes about thirty minutes.", cat:"Stretnutia"},
+  {sk:"Kto vedie toto stretnutie?", en:"Who is running this meeting?", cat:"Stretnutia"},
+  {sk:"Môžem podeliť obrazovku?", en:"Can I share my screen?", cat:"Stretnutia"},
+  {sk:"Spojenie je nestabilné.", en:"The connection is unstable.", cat:"Stretnutia"},
+  {sk:"Presun hovoru na neskôr.", en:"Postpone the call to later.", cat:"Stretnutia"},
+  {sk:"Zápisnica bude odoslaná po stretnutí.", en:"The meeting minutes will be sent after the meeting.", cat:"Stretnutia"},
+  {sk:"Všetci sú prítomní.", en:"Everyone is present.", cat:"Stretnutia"},
+  {sk:"Čakáme ešte na niekoľko ľudí.", en:"We're still waiting for a few people.", cat:"Stretnutia"},
+  {sk:"Začnime, nemáme veľa času.", en:"Let's start, we don't have much time.", cat:"Stretnutia"},
+
+  // Email a komunikácia
+  {sk:"Píšem vám ohľadom nášho projektu.", en:"I'm writing to you regarding our project.", cat:"Email"},
+  {sk:"Ďakujem za váš email.", en:"Thank you for your email.", cat:"Email"},
+  {sk:"Odpovedám na váš email zo včera.", en:"I'm replying to your email from yesterday.", cat:"Email"},
+  {sk:"Dajte mi vedieť, ak máte otázky.", en:"Let me know if you have any questions.", cat:"Email"},
+  {sk:"Posielam v prílohe správu.", en:"I'm attaching the report.", cat:"Email"},
+  {sk:"Dám vás do kópie.", en:"I'll CC you.", cat:"Email"},
+  {sk:"Správa bola odoslaná.", en:"The message has been sent.", cat:"Email"},
+  {sk:"Mohli by ste mi poslať dokument?", en:"Could you send me the document?", cat:"Email"},
+  {sk:"Nastavil som si automatickú odpoveď.", en:"I've set up an out-of-office reply.", cat:"Email"},
+  {sk:"Som na dovolenke a vrátim sa v pondelok.", en:"I'm on vacation and will return on Monday.", cat:"Email"},
+  {sk:"Prosím, potvrďte prijatie.", en:"Please confirm receipt.", cat:"Email"},
+  {sk:"Ozve sa čo najskôr.", en:"Get back to me as soon as possible.", cat:"Email"},
+  {sk:"Pre viac informácií ma kontaktujte.", en:"For more information, please contact me.", cat:"Email"},
+  {sk:"Dovoľte mi to vysvetliť podrobnejšie.", en:"Allow me to explain in more detail.", cat:"Email"},
+  {sk:"Pripájam odkaz na dokument.", en:"I'm attaching a link to the document.", cat:"Email"},
+  {sk:"Rád vám pomôžem s tým.", en:"I'd be happy to help you with that.", cat:"Email"},
+  {sk:"Budem vás informovať o vývoji situácie.", en:"I'll keep you updated on the progress.", cat:"Email"},
+  {sk:"Ak si to chcete prediskutovať, zavolajte mi.", en:"If you'd like to discuss this, give me a call.", cat:"Email"},
+  {sk:"Tešíme sa na vašu odpoveď.", en:"We look forward to your reply.", cat:"Email"},
+  {sk:"S pozdravom,", en:"Best regards,", cat:"Email"},
+
+  // Projekty a deadliny
+  {sk:"Aký je termín odovzdania?", en:"What is the deadline?", cat:"Projekty"},
+  {sk:"Projekt je v plnom prúde.", en:"The project is in full swing.", cat:"Projekty"},
+  {sk:"Sme pozadu podľa plánu.", en:"We are behind schedule.", cat:"Projekty"},
+  {sk:"Sme v predstihu podľa plánu.", en:"We are ahead of schedule.", cat:"Projekty"},
+  {sk:"Potrebujem predĺžiť termín.", en:"I need to extend the deadline.", cat:"Projekty"},
+  {sk:"Úloha je dokončená.", en:"The task is completed.", cat:"Projekty"},
+  {sk:"Pracujem na tom.", en:"I'm working on it.", cat:"Projekty"},
+  {sk:"To nie je v rozsahu projektu.", en:"That's out of scope.", cat:"Projekty"},
+  {sk:"Musíme to zaradiť do ďalšieho sprintu.", en:"We need to put it in the next sprint.", cat:"Projekty"},
+  {sk:"Môžete odhadnúť čas potrebný na úlohu?", en:"Can you estimate the time needed for the task?", cat:"Projekty"},
+  {sk:"Projektu sa dobre darí.", en:"The project is going well.", cat:"Projekty"},
+  {sk:"Stretli sme sa s neočakávaným problémom.", en:"We encountered an unexpected problem.", cat:"Projekty"},
+  {sk:"Musíme revidovať plán.", en:"We need to revise the plan.", cat:"Projekty"},
+  {sk:"Kto je zodpovedný za túto úlohu?", en:"Who is responsible for this task?", cat:"Projekty"},
+  {sk:"Priradím vám túto úlohu.", en:"I'll assign this task to you.", cat:"Projekty"},
+  {sk:"Sledujeme pokrok každý týždeň.", en:"We track progress every week.", cat:"Projekty"},
+  {sk:"Aký je aktuálny stav projektu?", en:"What is the current status of the project?", cat:"Projekty"},
+  {sk:"Projekt je v testovacej fáze.", en:"The project is in the testing phase.", cat:"Projekty"},
+  {sk:"Vydávame novú verziu budúci týždeň.", en:"We're releasing a new version next week.", cat:"Projekty"},
+  {sk:"Spätná väzba od klienta bola pozitívna.", en:"Client feedback was positive.", cat:"Projekty"},
+  {sk:"Potrebujeme viac zdrojov na dokončenie projektu.", en:"We need more resources to complete the project.", cat:"Projekty"},
+  {sk:"Projekt bol úspešne ukončený.", en:"The project was successfully completed.", cat:"Projekty"},
+  {sk:"Ešte nám zostáva niekoľko úloh.", en:"We still have a few tasks remaining.", cat:"Projekty"},
+  {sk:"Tento míľnik je kľúčový.", en:"This milestone is critical.", cat:"Projekty"},
+  {sk:"Čo je ďalší krok?", en:"What is the next step?", cat:"Projekty"},
+
+  // Problémy a riešenia
+  {sk:"Narazili sme na problém.", en:"We've run into a problem.", cat:"Problémy"},
+  {sk:"Niečo nefunguje správne.", en:"Something isn't working correctly.", cat:"Problémy"},
+  {sk:"Potrebujem pomoc s týmto problémom.", en:"I need help with this issue.", cat:"Problémy"},
+  {sk:"Dokážete to preskúmať?", en:"Can you look into it?", cat:"Problémy"},
+  {sk:"Nájdeme riešenie.", en:"We'll find a solution.", cat:"Problémy"},
+  {sk:"Skúšal som to, ale nefunguje to.", en:"I tried it, but it doesn't work.", cat:"Problémy"},
+  {sk:"Problém bol vyriešený.", en:"The problem has been resolved.", cat:"Problémy"},
+  {sk:"Toto je dočasné riešenie.", en:"This is a temporary fix.", cat:"Problémy"},
+  {sk:"Potrebujem eskalovať tento problém.", en:"I need to escalate this issue.", cat:"Problémy"},
+  {sk:"Aká je hlavná príčina problému?", en:"What is the root cause of the problem?", cat:"Problémy"},
+  {sk:"Je to chyba v kóde.", en:"There's a bug in the code.", cat:"Problémy"},
+  {sk:"Analyzujem chybu.", en:"I'm analyzing the error.", cat:"Problémy"},
+  {sk:"Opätovné spustenie nepomohlo.", en:"Restarting didn't help.", cat:"Problémy"},
+  {sk:"Systém je nedostupný.", en:"The system is unavailable.", cat:"Problémy"},
+  {sk:"Pracujeme na náprave.", en:"We're working on a fix.", cat:"Problémy"},
+  {sk:"Problém bol nahlásený tímu.", en:"The issue was reported to the team.", cat:"Problémy"},
+  {sk:"Môžete mi poslať chybové hlásenie?", en:"Can you send me the error message?", cat:"Problémy"},
+  {sk:"Kedy bol problém prvýkrát zaznamenaný?", en:"When was the problem first noticed?", cat:"Problémy"},
+  {sk:"Existuje obchádzka?", en:"Is there a workaround?", cat:"Problémy"},
+  {sk:"Problém sa bude riešiť s najvyššou prioritou.", en:"The issue will be handled with the highest priority.", cat:"Problémy"},
+
+  // Prezentácie a reporty
+  {sk:"Dnes vám predstavím výsledky analýzy.", en:"Today I'll present the results of the analysis.", cat:"Prezentácie"},
+  {sk:"Dovoľte mi začať s prehľadom.", en:"Allow me to start with an overview.", cat:"Prezentácie"},
+  {sk:"Na tomto grafe vidíme nárast.", en:"On this chart we can see an increase.", cat:"Prezentácie"},
+  {sk:"Prejdime na ďalší bod.", en:"Let's move to the next point.", cat:"Prezentácie"},
+  {sk:"Na záver by som chcel zhrnúť.", en:"In conclusion, I'd like to summarize.", cat:"Prezentácie"},
+  {sk:"Máte nejaké otázky?", en:"Do you have any questions?", cat:"Prezentácie"},
+  {sk:"Rád zodpoviem vaše otázky.", en:"I'll be happy to answer your questions.", cat:"Prezentácie"},
+  {sk:"Správu vám pošlem po stretnutí.", en:"I'll send you the report after the meeting.", cat:"Prezentácie"},
+  {sk:"Prezentácia trvá asi dvadsať minút.", en:"The presentation takes about twenty minutes.", cat:"Prezentácie"},
+  {sk:"Dáta hovoria za seba.", en:"The data speaks for itself.", cat:"Prezentácie"},
+  {sk:"Porovnajme tieto dve možnosti.", en:"Let's compare these two options.", cat:"Prezentácie"},
+  {sk:"Ako vidíte na snímke...", en:"As you can see on the slide...", cat:"Prezentácie"},
+  {sk:"Naše odporúčanie je nasledovné.", en:"Our recommendation is as follows.", cat:"Prezentácie"},
+  {sk:"Výsledky sú lepšie ako očakávané.", en:"The results are better than expected.", cat:"Prezentácie"},
+  {sk:"Trend je jasne pozitívny.", en:"The trend is clearly positive.", cat:"Prezentácie"},
+
+  // Tímová spolupráca
+  {sk:"Pracujeme ako tím.", en:"We work as a team.", cat:"Spolupráca"},
+  {sk:"Rád s vami spolupracujem.", en:"I enjoy working with you.", cat:"Spolupráca"},
+  {sk:"Môžeme to vyriešiť spolu.", en:"We can solve it together.", cat:"Spolupráca"},
+  {sk:"Potrebujem vašu pomoc.", en:"I need your help.", cat:"Spolupráca"},
+  {sk:"Oceňujem vašu prácu.", en:"I appreciate your work.", cat:"Spolupráca"},
+  {sk:"Výborne ste to zvládli!", en:"You handled it excellently!", cat:"Spolupráca"},
+  {sk:"Môžete ma zastúpiť počas môjho dňa voľna?", en:"Can you cover for me during my day off?", cat:"Spolupráca"},
+  {sk:"Podelím sa o zistenia s tímom.", en:"I'll share the findings with the team.", cat:"Spolupráca"},
+  {sk:"Komunikácia je kľúčová.", en:"Communication is key.", cat:"Spolupráca"},
+  {sk:"Máme rovnaké ciele.", en:"We have the same goals.", cat:"Spolupráca"},
+  {sk:"Budem k dispozícii ak niečo budete potrebovať.", en:"I'll be available if you need anything.", cat:"Spolupráca"},
+  {sk:"Koordinujeme naše úsilie.", en:"We're coordinating our efforts.", cat:"Spolupráca"},
+  {sk:"Môžete sa na mňa kedykoľvek obrátiť.", en:"Feel free to reach out to me at any time.", cat:"Spolupráca"},
+  {sk:"Spoľahnem sa na vás.", en:"I'm counting on you.", cat:"Spolupráca"},
+  {sk:"Každý člen tímu má svoju rolu.", en:"Every team member has their role.", cat:"Spolupráca"},
+
+  // Dáta a technika
+  {sk:"Spúšťam pipeline.", en:"I'm running the pipeline.", cat:"Dáta & Tech"},
+  {sk:"Dáta sú načítané do databázy.", en:"The data is loaded into the database.", cat:"Dáta & Tech"},
+  {sk:"Databáza je aktuálna.", en:"The database is up to date.", cat:"Dáta & Tech"},
+  {sk:"Tabuľka je poškodená.", en:"The table is corrupted.", cat:"Dáta & Tech"},
+  {sk:"Transformácia dát prebehla úspešne.", en:"The data transformation was successful.", cat:"Dáta & Tech"},
+  {sk:"Vytváram zálohu databázy.", en:"I'm creating a database backup.", cat:"Dáta & Tech"},
+  {sk:"API vracia chybu päťsto.", en:"The API returns a 500 error.", cat:"Dáta & Tech"},
+  {sk:"Dotaz trvá príliš dlho.", en:"The query takes too long.", cat:"Dáta & Tech"},
+  {sk:"Optimalizujem dotaz.", en:"I'm optimizing the query.", cat:"Dáta & Tech"},
+  {sk:"Schéma bola aktualizovaná.", en:"The schema has been updated.", cat:"Dáta & Tech"},
+  {sk:"Nasadzujem zmeny do produkcie.", en:"I'm deploying changes to production.", cat:"Dáta & Tech"},
+  {sk:"Skontrolujte logy.", en:"Check the logs.", cat:"Dáta & Tech"},
+  {sk:"Konfigurácia je nesprávna.", en:"The configuration is incorrect.", cat:"Dáta & Tech"},
+  {sk:"Pripájam sa k databáze.", en:"I'm connecting to the database.", cat:"Dáta & Tech"},
+  {sk:"Závislosť chýba.", en:"A dependency is missing.", cat:"Dáta & Tech"},
+  {sk:"Verzia knižnice je zastaraná.", en:"The library version is outdated.", cat:"Dáta & Tech"},
+  {sk:"Kód je zlúčený do hlavnej vetvy.", en:"The code is merged into the main branch.", cat:"Dáta & Tech"},
+  {sk:"Otváram pull request.", en:"I'm opening a pull request.", cat:"Dáta & Tech"},
+  {sk:"Revízia kódu prebieha.", en:"Code review is in progress.", cat:"Dáta & Tech"},
+  {sk:"Spúšťam jednotkové testy.", en:"I'm running unit tests.", cat:"Dáta & Tech"},
+  {sk:"Všetky testy prešli.", en:"All tests passed.", cat:"Dáta & Tech"},
+  {sk:"Test zlyhal.", en:"The test failed.", cat:"Dáta & Tech"},
+  {sk:"Kontajner nebeží.", en:"The container is not running.", cat:"Dáta & Tech"},
+  {sk:"Logujeme všetky udalosti.", en:"We're logging all events.", cat:"Dáta & Tech"},
+  {sk:"Úloha Airflow zlyhala.", en:"The Airflow task failed.", cat:"Dáta & Tech"},
+  {sk:"Dáta sú uložené v S3.", en:"The data is stored in S3.", cat:"Dáta & Tech"},
+  {sk:"Premenná prostredia nie je nastavená.", en:"The environment variable is not set.", cat:"Dáta & Tech"},
+  {sk:"Robíme migráciu databázy.", en:"We're running a database migration.", cat:"Dáta & Tech"},
+  {sk:"Kapacita úložiska je takmer plná.", en:"The storage capacity is almost full.", cat:"Dáta & Tech"},
+  {sk:"Výkon sa zlepšil po optimalizácii.", en:"Performance improved after optimization.", cat:"Dáta & Tech"},
+
+  // HR a pracovné podmienky
+  {sk:"Žiadam o dovolenku od pondelka do piatku.", en:"I'm requesting vacation from Monday to Friday.", cat:"HR"},
+  {sk:"Pracujem z domu dnes.", en:"I'm working from home today.", cat:"HR"},
+  {sk:"Moje pracovné hodiny sú od deviatej do piatej.", en:"My working hours are from nine to five.", cat:"HR"},
+  {sk:"Mám lekársku návštevu zajtra ráno.", en:"I have a doctor's appointment tomorrow morning.", cat:"HR"},
+  {sk:"Beriem si sick day.", en:"I'm taking a sick day.", cat:"HR"},
+  {sk:"Hodnotenie prebehne budúci mesiac.", en:"The performance review will take place next month.", cat:"HR"},
+  {sk:"Dostal som zvýšenie platu.", en:"I received a salary increase.", cat:"HR"},
+  {sk:"Rokujeme o podmienkach zmluvy.", en:"We're negotiating contract terms.", cat:"HR"},
+  {sk:"Nástupný deň je v pondelok.", en:"The start date is Monday.", cat:"HR"},
+  {sk:"Nastúpim na novú pozíciu.", en:"I'll be starting a new position.", cat:"HR"},
+  {sk:"Zúčastňujem sa školenia.", en:"I'm attending a training session.", cat:"HR"},
+  {sk:"Hľadáme nového zamestnanca.", en:"We're looking for a new employee.", cat:"HR"},
+  {sk:"Pohovor prebehol dobre.", en:"The interview went well.", cat:"HR"},
+  {sk:"Predkladám svoju výpoveď.", en:"I'm submitting my resignation.", cat:"HR"},
+  {sk:"Výpovedná lehota je jeden mesiac.", en:"The notice period is one month.", cat:"HR"},
+
+  // Financie a obchod
+  {sk:"Rozpočet bol schválený.", en:"The budget has been approved.", cat:"Financie"},
+  {sk:"Sme v rámci rozpočtu.", en:"We're within budget.", cat:"Financie"},
+  {sk:"Toto prekračuje náš rozpočet.", en:"This exceeds our budget.", cat:"Financie"},
+  {sk:"Tržby vzrástli o pätnásť percent.", en:"Revenue increased by fifteen percent.", cat:"Financie"},
+  {sk:"Náklady sa zvýšili.", en:"Costs have increased.", cat:"Financie"},
+  {sk:"Čísla vyzerajú dobre.", en:"The numbers look good.", cat:"Financie"},
+  {sk:"Musíme znížiť náklady.", en:"We need to reduce costs.", cat:"Financie"},
+  {sk:"Fakturujeme mesačne.", en:"We invoice monthly.", cat:"Financie"},
+  {sk:"Investícia sa vrátila.", en:"The investment has paid off.", cat:"Financie"},
+  {sk:"Uzatvárame zmluvu s novým klientom.", en:"We're closing a contract with a new client.", cat:"Financie"},
+  {sk:"Predkladáme ponuku.", en:"We're submitting a proposal.", cat:"Financie"},
+  {sk:"Dohodli sme sa na cene.", en:"We've agreed on the price.", cat:"Financie"},
+  {sk:"Platba bola prijatá.", en:"The payment has been received.", cat:"Financie"},
+  {sk:"Faktura je splatná do tridsiatich dní.", en:"The invoice is due within thirty days.", cat:"Financie"},
+  {sk:"Marža je nedostatočná.", en:"The margin is insufficient.", cat:"Financie"},
+
+  // Konverzácia — vyjednávanie a argumentácia
+  {sk:"Chcem objasniť jednu vec.", en:"I'd like to clarify one thing.", cat:"Argumentácia"},
+  {sk:"Môžem sa opýtať na váš názor?", en:"May I ask for your opinion?", cat:"Argumentácia"},
+  {sk:"Mám trochu iný pohľad na vec.", en:"I have a slightly different perspective.", cat:"Argumentácia"},
+  {sk:"Rozumiem vášmu bodu, ale...", en:"I understand your point, but...", cat:"Argumentácia"},
+  {sk:"Čo keby sme skúsili iný prístup?", en:"What if we tried a different approach?", cat:"Argumentácia"},
+  {sk:"Myslíte si, že toto riešenie je reálne?", en:"Do you think this solution is feasible?", cat:"Argumentácia"},
+  {sk:"Musíme zvážiť výhody a nevýhody.", en:"We need to weigh the pros and cons.", cat:"Argumentácia"},
+  {sk:"Toto je môj návrh.", en:"This is my suggestion.", cat:"Argumentácia"},
+  {sk:"Sme ochotní kompromitovať.", en:"We're willing to compromise.", cat:"Argumentácia"},
+  {sk:"Na čom sme sa dohodli?", en:"What have we agreed on?", cat:"Argumentácia"},
+  {sk:"Potrebujem viac času na rozmyslenie.", en:"I need more time to think about it.", cat:"Argumentácia"},
+  {sk:"Môžeme sa vrátiť k tomuto neskôr?", en:"Can we come back to this later?", cat:"Argumentácia"},
+  {sk:"Necháme si to na ďalšie stretnutie.", en:"We'll leave this for the next meeting.", cat:"Argumentácia"},
+  {sk:"Zdá sa, že sme dospeli k zhode.", en:"It seems we've reached an agreement.", cat:"Argumentácia"},
+  {sk:"To znie rozumne.", en:"That sounds reasonable.", cat:"Argumentácia"},
+
+  // Požiadavky a zdvorilosť
+  {sk:"Mohol by ste mi s tým pomôcť?", en:"Could you help me with that?", cat:"Zdvorilosť"},
+  {sk:"Veľmi pekne ďakujem.", en:"Thank you very much.", cat:"Zdvorilosť"},
+  {sk:"Nie je za čo.", en:"You're welcome. / Don't mention it.", cat:"Zdvorilosť"},
+  {sk:"Prepáčte, nesrozumel som.", en:"I'm sorry, I didn't understand.", cat:"Zdvorilosť"},
+  {sk:"Mohli by ste to zopakovať, prosím?", en:"Could you repeat that, please?", cat:"Zdvorilosť"},
+  {sk:"Hovoríte príliš rýchlo.", en:"You're speaking too fast.", cat:"Zdvorilosť"},
+  {sk:"Prosím, hovorte pomalšie.", en:"Please speak more slowly.", cat:"Zdvorilosť"},
+  {sk:"Ospravedlňujem sa za omeškanie.", en:"I apologize for the delay.", cat:"Zdvorilosť"},
+  {sk:"Prepáčte za nedorozumenie.", en:"I'm sorry for the misunderstanding.", cat:"Zdvorilosť"},
+  {sk:"Rád vám s tým pomôžem.", en:"I'd be happy to help you with that.", cat:"Zdvorilosť"},
+  {sk:"Nesmiem zabudnúť na toto.", en:"I must not forget about this.", cat:"Zdvorilosť"},
+  {sk:"Vezmem to na vedomie.", en:"I'll take note of that.", cat:"Zdvorilosť"},
+  {sk:"Ozve sa k vám čo najskôr.", en:"I'll get back to you as soon as possible.", cat:"Zdvorilosť"},
+  {sk:"Bol by som vám vďačný.", en:"I would be grateful.", cat:"Zdvorilosť"},
+  {sk:"Nechcem vás zdržiavať.", en:"I don't want to take up your time.", cat:"Zdvorilosť"},
+
+  // Reporting a analytika
+  {sk:"Výsledky analýzy sú nasledovné.", en:"The results of the analysis are as follows.", cat:"Analytika"},
+  {sk:"Identifikovali sme niekoľko anomálií.", en:"We identified several anomalies.", cat:"Analytika"},
+  {sk:"Dáta naznačujú rastúci trend.", en:"The data suggests an upward trend.", cat:"Analytika"},
+  {sk:"Korelujeme tieto dve premenné.", en:"We're correlating these two variables.", cat:"Analytika"},
+  {sk:"Chybovosť je pod päť percent.", en:"The error rate is below five percent.", cat:"Analytika"},
+  {sk:"Vzorka nie je dostatočne veľká.", en:"The sample size is not large enough.", cat:"Analytika"},
+  {sk:"Výsledky sú štatisticky významné.", en:"The results are statistically significant.", cat:"Analytika"},
+  {sk:"Dashboard bol aktualizovaný.", en:"The dashboard has been updated.", cat:"Analytika"},
+  {sk:"Správa pokrýva posledný kvartál.", en:"The report covers the last quarter.", cat:"Analytika"},
+  {sk:"Metriky sú v rámci normálnych hodnôt.", en:"The metrics are within normal values.", cat:"Analytika"},
+  {sk:"Zaznamenali sme výkyv v dátach.", en:"We recorded a spike in the data.", cat:"Analytika"},
+  {sk:"Porovnávame s rovnakým obdobím minulého roka.", en:"We're comparing with the same period last year.", cat:"Analytika"},
+  {sk:"Prognóza na ďalší rok je optimistická.", en:"The forecast for next year is optimistic.", cat:"Analytika"},
+  {sk:"Filtrujem dáta podľa dátumu.", en:"I'm filtering the data by date.", cat:"Analytika"},
+  {sk:"Agregujeme dáta na úrovni týždňa.", en:"We're aggregating data at the weekly level.", cat:"Analytika"},
+
+  // Cloudové a systémové operácie
+  {sk:"Cluster bol reštartovaný.", en:"The cluster has been restarted.", cat:"Cloud & Ops"},
+  {sk:"Autoscaling je zapnutý.", en:"Autoscaling is enabled.", cat:"Cloud & Ops"},
+  {sk:"Náklady na cloud sú vyššie ako minulý mesiac.", en:"Cloud costs are higher than last month.", cat:"Cloud & Ops"},
+  {sk:"Alarm bol spustený.", en:"The alarm was triggered.", cat:"Cloud & Ops"},
+  {sk:"Incident bol uzavretý.", en:"The incident has been closed.", cat:"Cloud & Ops"},
+  {sk:"Záplata bola nasadená.", en:"The patch has been deployed.", cat:"Cloud & Ops"},
+  {sk:"Monitoring ukazuje normálne hodnoty.", en:"Monitoring shows normal values.", cat:"Cloud & Ops"},
+  {sk:"Nastavujeme upozornenia.", en:"We're setting up alerts.", cat:"Cloud & Ops"},
+  {sk:"Obnovujem zálohu.", en:"I'm restoring the backup.", cat:"Cloud & Ops"},
+  {sk:"Kapacita servera je na deväťdesiat percentách.", en:"Server capacity is at ninety percent.", cat:"Cloud & Ops"},
+  {sk:"Prevádzka je počas noci nižšia.", en:"Traffic is lower during the night.", cat:"Cloud & Ops"},
+  {sk:"Robíme plánovanú údržbu.", en:"We're doing scheduled maintenance.", cat:"Cloud & Ops"},
+  {sk:"Systém beží bez problémov.", en:"The system is running without issues.", cat:"Cloud & Ops"},
+  {sk:"Latencia sa zvýšila.", en:"Latency has increased.", cat:"Cloud & Ops"},
+  {sk:"Priepustnosť je v norme.", en:"Throughput is within normal range.", cat:"Cloud & Ops"},
+
+  // Rokovania a vyjednávanie
+  {sk:"Rád by som navrhol iné riešenie.", en:"I'd like to suggest an alternative solution.", cat:"Rokovanie"},
+  {sk:"Môžeme sa dohodnúť na kompromise?", en:"Can we agree on a compromise?", cat:"Rokovanie"},
+  {sk:"Aké sú vaše podmienky?", en:"What are your terms?", cat:"Rokovanie"},
+  {sk:"Sme ochotní znížiť cenu.", en:"We're willing to lower the price.", cat:"Rokovanie"},
+  {sk:"Toto je naša konečná ponuka.", en:"This is our final offer.", cat:"Rokovanie"},
+  {sk:"Potrebujem to prekonzultovať s manažmentom.", en:"I need to consult this with management.", cat:"Rokovanie"},
+  {sk:"Dajte nám vedieť do piatku.", en:"Let us know by Friday.", cat:"Rokovanie"},
+  {sk:"Máme záujem o dlhodobú spoluprácu.", en:"We're interested in long-term cooperation.", cat:"Rokovanie"},
+  {sk:"Zmluvné podmienky sú prijateľné.", en:"The contract terms are acceptable.", cat:"Rokovanie"},
+  {sk:"Potrebujeme čas na zhodnotenie ponuky.", en:"We need time to evaluate the offer.", cat:"Rokovanie"},
+  {sk:"Čo je zahrnuté v cene?", en:"What is included in the price?", cat:"Rokovanie"},
+  {sk:"Existuje možnosť predĺžiť zmluvu?", en:"Is there an option to extend the contract?", cat:"Rokovanie"},
+  {sk:"Garantujete servisné úrovne (SLA)?", en:"Do you guarantee service levels (SLA)?", cat:"Rokovanie"},
+  {sk:"Môžete nám poskytnúť referencie?", en:"Can you provide us with references?", cat:"Rokovanie"},
+  {sk:"Radi by sme pilotne otestovali riešenie.", en:"We'd like to pilot-test the solution.", cat:"Rokovanie"},
+
+  // Každodenná konverzácia v kancelárii
+  {sk:"Kde sa nachádza toaleta?", en:"Where is the restroom?", cat:"Kancelária"},
+  {sk:"Môžem si dať kávu?", en:"May I get a coffee?", cat:"Kancelária"},
+  {sk:"Funguje tu tlačiareň?", en:"Is the printer working here?", cat:"Kancelária"},
+  {sk:"Zabudol som heslo od VPN.", en:"I forgot my VPN password.", cat:"Kancelária"},
+  {sk:"Mám problém s prístupom.", en:"I have an access issue.", cat:"Kancelária"},
+  {sk:"Môžete mi dať prístup do repozitára?", en:"Can you give me access to the repository?", cat:"Kancelária"},
+  {sk:"Kto je za toto zodpovedný?", en:"Who is responsible for this?", cat:"Kancelária"},
+  {sk:"Musím si zarezervovať zasadaciu miestnosť.", en:"I need to book a meeting room.", cat:"Kancelária"},
+  {sk:"Kde nájdem túto informáciu?", en:"Where can I find this information?", cat:"Kancelária"},
+  {sk:"Je tento projekt stále aktívny?", en:"Is this project still active?", cat:"Kancelária"},
+  {sk:"Pracujem na diaľku dnes.", en:"I'm working remotely today.", cat:"Kancelária"},
+  {sk:"Ozvem sa vám keď budem mať výsledky.", en:"I'll reach out when I have results.", cat:"Kancelária"},
+  {sk:"Máme na to schválenie?", en:"Do we have approval for this?", cat:"Kancelária"},
+  {sk:"Potrebujem to podpísať?", en:"Do I need to sign this?", cat:"Kancelária"},
+  {sk:"Kedy to môžeme očakávať?", en:"When can we expect it?", cat:"Kancelária"},
+
+  // Technické diskusie
+  {sk:"Aká je architektúra systému?", en:"What is the system architecture?", cat:"Dáta & Tech"},
+  {sk:"Kde sú uložené zdrojové dáta?", en:"Where is the source data stored?", cat:"Dáta & Tech"},
+  {sk:"Aká je frekvencia spúšťania pipeline?", en:"What is the pipeline run frequency?", cat:"Dáta & Tech"},
+  {sk:"Sú dáta šifrované?", en:"Is the data encrypted?", cat:"Dáta & Tech"},
+  {sk:"Kto má prístup k databáze?", en:"Who has access to the database?", cat:"Dáta & Tech"},
+  {sk:"Potrebujeme index na tejto tabuľke.", en:"We need an index on this table.", cat:"Dáta & Tech"},
+  {sk:"Dotaz vracia duplicity.", en:"The query returns duplicates.", cat:"Dáta & Tech"},
+  {sk:"Chýbajú hodnoty v stĺpci.", en:"There are missing values in the column.", cat:"Dáta & Tech"},
+  {sk:"Dáta nie sú konzistentné.", en:"The data is not consistent.", cat:"Dáta & Tech"},
+  {sk:"Kódovanie znakov je nesprávne.", en:"The character encoding is incorrect.", cat:"Dáta & Tech"},
+  {sk:"Súbor je poškodený.", en:"The file is corrupted.", cat:"Dáta & Tech"},
+  {sk:"Formát dátumu je nesprávny.", en:"The date format is incorrect.", cat:"Dáta & Tech"},
+  {sk:"Objem dát narastá.", en:"The data volume is growing.", cat:"Dáta & Tech"},
+  {sk:"Čas behu sa skrátil na polovicu.", en:"The run time was cut in half.", cat:"Dáta & Tech"},
+  {sk:"Pridávame nový zdroj dát.", en:"We're adding a new data source.", cat:"Dáta & Tech"},
+  {sk:"Dokumentujeme dátový model.", en:"We're documenting the data model.", cat:"Dáta & Tech"},
+  {sk:"Mapujeme zdrojové stĺpce na cieľové.", en:"We're mapping source columns to target ones.", cat:"Dáta & Tech"},
+  {sk:"Job beží každú noc o polnoci.", en:"The job runs every night at midnight.", cat:"Dáta & Tech"},
+  {sk:"Potrebujeme pridať nový parameter.", en:"We need to add a new parameter.", cat:"Dáta & Tech"},
+  {sk:"Zmena sa prejaví po reštarte.", en:"The change will take effect after a restart.", cat:"Dáta & Tech"},
+
+  // Spätná väzba a hodnotenie
+  {sk:"Vaša práca je na vysokej úrovni.", en:"Your work is of a high standard.", cat:"Hodnotenie"},
+  {sk:"Oceňujem vašu iniciatívu.", en:"I appreciate your initiative.", cat:"Hodnotenie"},
+  {sk:"Vidím veľký pokrok.", en:"I see great progress.", cat:"Hodnotenie"},
+  {sk:"Mám niekoľko pripomienok k vašej práci.", en:"I have a few comments on your work.", cat:"Hodnotenie"},
+  {sk:"Toto by sa dalo spraviť efektívnejšie.", en:"This could be done more efficiently.", cat:"Hodnotenie"},
+  {sk:"Pracujte na komunikácii s tímom.", en:"Work on your communication with the team.", cat:"Hodnotenie"},
+  {sk:"Ste zodpovedný a spoľahlivý.", en:"You are responsible and reliable.", cat:"Hodnotenie"},
+  {sk:"Potrebujete zlepšiť dokumentáciu.", en:"You need to improve documentation.", cat:"Hodnotenie"},
+  {sk:"Splnili ste všetky ciele.", en:"You've met all your goals.", cat:"Hodnotenie"},
+  {sk:"Kde vidíte priestor na zlepšenie?", en:"Where do you see room for improvement?", cat:"Hodnotenie"},
+  {sk:"Aké sú vaše ciele na ďalší kvartál?", en:"What are your goals for the next quarter?", cat:"Hodnotenie"},
+  {sk:"Máte záujem o kariérny postup?", en:"Are you interested in career advancement?", cat:"Hodnotenie"},
+  {sk:"Celkovo hodnotím vašu prácu pozitívne.", en:"Overall, I evaluate your work positively.", cat:"Hodnotenie"},
+  {sk:"Tento projekt ste zvládli výborne.", en:"You handled this project excellently.", cat:"Hodnotenie"},
+  {sk:"Odporúčam absolvovať toto školenie.", en:"I recommend attending this training.", cat:"Hodnotenie"},
+
+  // Onboarding a nové projekty
+  {sk:"Dovoľte mi predstaviť sa.", en:"Allow me to introduce myself.", cat:"Onboarding"},
+  {sk:"Nastúpil som minulý týždeň.", en:"I started last week.", cat:"Onboarding"},
+  {sk:"Ešte sa zoznamujem s projektom.", en:"I'm still getting familiar with the project.", cat:"Onboarding"},
+  {sk:"Môžete mi vysvetliť pracovný postup?", en:"Can you explain the workflow to me?", cat:"Onboarding"},
+  {sk:"Kde nájdem dokumentáciu?", en:"Where can I find the documentation?", cat:"Onboarding"},
+  {sk:"Kto je môj buddy / mentor?", en:"Who is my buddy / mentor?", cat:"Onboarding"},
+  {sk:"Aké nástroje tím používa?", en:"What tools does the team use?", cat:"Onboarding"},
+  {sk:"Mám prístup ku všetkému čo potrebujem?", en:"Do I have access to everything I need?", cat:"Onboarding"},
+  {sk:"Na koho sa mám obrátiť s otázkami?", en:"Who should I contact with questions?", cat:"Onboarding"},
+  {sk:"Aký je proces code review?", en:"What is the code review process?", cat:"Onboarding"},
+  {sk:"Ako funguje nasadzovanie do produkcie?", en:"How does deployment to production work?", cat:"Onboarding"},
+  {sk:"Kedy je denný standup?", en:"When is the daily standup?", cat:"Onboarding"},
+  {sk:"Aký je spôsob komunikácie v tíme?", en:"What is the team's way of communication?", cat:"Onboarding"},
+  {sk:"Existuje wiki alebo interná dokumentácia?", en:"Is there a wiki or internal documentation?", cat:"Onboarding"},
+  {sk:"Čo je mojou prvou úlohou?", en:"What is my first task?", cat:"Onboarding"},
+
+  // Statusy a aktualizácie
+  {sk:"Všetko prebieha podľa plánu.", en:"Everything is on track.", cat:"Statusy"},
+  {sk:"Narazil som na bloker.", en:"I've hit a blocker.", cat:"Statusy"},
+  {sk:"Čakám na odpoveď od iného tímu.", en:"I'm waiting for a response from another team.", cat:"Statusy"},
+  {sk:"Úloha je v recenzii.", en:"The task is in review.", cat:"Statusy"},
+  {sk:"Práca je takmer dokončená.", en:"The work is almost done.", cat:"Statusy"},
+  {sk:"Odhadujeme dokončenie zajtra.", en:"We estimate completion by tomorrow.", cat:"Statusy"},
+  {sk:"Musím preorganizovať priority.", en:"I need to reprioritize.", cat:"Statusy"},
+  {sk:"Toto je blokované iným ticketom.", en:"This is blocked by another ticket.", cat:"Statusy"},
+  {sk:"Práca bola odovzdaná.", en:"The work has been delivered.", cat:"Statusy"},
+  {sk:"Čakám na schválenie.", en:"I'm waiting for approval.", cat:"Statusy"},
+  {sk:"Úloha bola uzavretá.", en:"The task has been closed.", cat:"Statusy"},
+  {sk:"Ide do backlogu.", en:"It goes into the backlog.", cat:"Statusy"},
+  {sk:"Toto je high priority.", en:"This is high priority.", cat:"Statusy"},
+  {sk:"Presunuté na ďalší sprint.", en:"Moved to the next sprint.", cat:"Statusy"},
+  {sk:"Stav je zelený / žltý / červený.", en:"The status is green / yellow / red.", cat:"Statusy"},
+
+  // Angličtina v emailoch — frázy
+  {sk:"Dovoľujem si vás osloviť ohľadom...", en:"I am reaching out regarding...", cat:"Email"},
+  {sk:"V prílohe nájdete požadovaný dokument.", en:"Please find the requested document attached.", cat:"Email"},
+  {sk:"Odkazujem na náš nedávny rozhovor.", en:"I'm referring to our recent conversation.", cat:"Email"},
+  {sk:"Podľa nášho predchádzajúceho emailu...", en:"As per our previous email...", cat:"Email"},
+  {sk:"Prepáčte za oneskorenie odpovede.", en:"Apologies for the delayed response.", cat:"Email"},
+  {sk:"Rád by som potvrdil termín stretnutia.", en:"I'd like to confirm the meeting time.", cat:"Email"},
+  {sk:"Dajte mi prosím vedieť o vašej dostupnosti.", en:"Please let me know about your availability.", cat:"Email"},
+  {sk:"Ďalší kroky sú nasledovné.", en:"The next steps are as follows.", cat:"Email"},
+  {sk:"Ak máte akékoľvek otázky, som k dispozícii.", en:"If you have any questions, I'm available.", cat:"Email"},
+  {sk:"Teším sa na naše stretnutie.", en:"I'm looking forward to our meeting.", cat:"Email"},
+  {sk:"Prosím o potvrdenie do zajtra.", en:"Please confirm by tomorrow.", cat:"Email"},
+  {sk:"Posielam na vedomie.", en:"Sending for your information / FYI.", cat:"Email"},
+  {sk:"Ďakujem za rýchlu odpoveď.", en:"Thank you for your quick reply.", cat:"Email"},
+  {sk:"Prosím o spätnú väzbu k priloženému dokumentu.", en:"Please provide feedback on the attached document.", cat:"Email"},
+  {sk:"S úctou,", en:"Yours sincerely, / Kind regards,", cat:"Email"},
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let currentTab = 'slovicka';
+let quizItems = [];
+let quizIndex = 0;
+let quizCorrect = 0;
+let quizWrong = 0;
+let quizAnswered = false;
+let quizReverse = false; // false = SK→EN, true = EN→SK
+let selectedQuizCats = new Set(['all']);
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(tab + '-section').classList.add('active');
+  document.querySelectorAll('nav button')[['slovicka','vety','kviz'].indexOf(tab)].classList.add('active');
+  if (tab === 'kviz') initQuiz();
+}
+
+// ============================================================
+// VOCABULARY
+// ============================================================
+function populateCatSelect(selectId, items) {
+  const sel = document.getElementById(selectId);
+  const cats = [...new Set(items.map(i => i.cat))].sort();
+  cats.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    sel.appendChild(o);
+  });
+}
+
+function renderVocab() {
+  const q = document.getElementById('voc-search').value.toLowerCase();
+  const cat = document.getElementById('voc-cat').value;
+  const filtered = VOCAB.filter(v =>
+    (!cat || v.cat === cat) &&
+    (!q || v.sk.toLowerCase().includes(q) || v.en.toLowerCase().includes(q))
+  );
+  document.getElementById('voc-count').textContent = filtered.length + ' slovíčok';
+  const grid = document.getElementById('voc-grid');
+  if (!filtered.length) { grid.innerHTML = '<div class="empty">Žiadne výsledky</div>'; return; }
+  grid.innerHTML = filtered.map(v => `
+    <div class="card" onclick="this.classList.toggle('open')">
+      <div class="cat">${v.cat}</div>
+      <div class="sk">${v.sk}</div>
+      <div class="en">${v.en}</div>
+      <div class="hint">👆 Klikni pre preklad</div>
+    </div>`).join('');
+}
+
+// ============================================================
+// SENTENCES
+// ============================================================
+function renderSentences() {
+  const q = document.getElementById('sen-search').value.toLowerCase();
+  const cat = document.getElementById('sen-cat').value;
+  const filtered = SENTENCES.filter(s =>
+    (!cat || s.cat === cat) &&
+    (!q || s.sk.toLowerCase().includes(q) || s.en.toLowerCase().includes(q))
+  );
+  document.getElementById('sen-count').textContent = filtered.length + ' viet';
+  const grid = document.getElementById('sen-grid');
+  if (!filtered.length) { grid.innerHTML = '<div class="empty">Žiadne výsledky</div>'; return; }
+  grid.innerHTML = filtered.map(s => `
+    <div class="card" onclick="this.classList.toggle('open')">
+      <div class="cat">${s.cat}</div>
+      <div class="sk">${s.sk}</div>
+      <div class="en">${s.en}</div>
+      <div class="hint">👆 Klikni pre preklad</div>
+    </div>`).join('');
+}
+
+// ============================================================
+// QUIZ
+// ============================================================
+function buildQuizCatButtons() {
+  const allItems = [...VOCAB, ...SENTENCES];
+  const cats = [...new Set(allItems.map(i => i.cat))].sort();
+  const container = document.getElementById('quiz-cats');
+  container.innerHTML = `<button class="active" onclick="toggleQuizCat('all',this)">Všetko</button>` +
+    cats.map(c => `<button onclick="toggleQuizCat('${c}',this)">${c}</button>`).join('');
+}
+
+function toggleQuizCat(cat, btn) {
+  if (cat === 'all') {
+    selectedQuizCats = new Set(['all']);
+    document.querySelectorAll('#quiz-cats button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  } else {
+    selectedQuizCats.delete('all');
+    document.querySelector('#quiz-cats button').classList.remove('active');
+    if (selectedQuizCats.has(cat)) {
+      selectedQuizCats.delete(cat);
+      btn.classList.remove('active');
+    } else {
+      selectedQuizCats.add(cat);
+      btn.classList.add('active');
+    }
+    if (selectedQuizCats.size === 0) {
+      selectedQuizCats.add('all');
+      document.querySelector('#quiz-cats button').classList.add('active');
+    }
+  }
+  loadQuizItems();
+  nextQuestion();
+}
+
+function loadQuizItems() {
+  const all = [...VOCAB, ...SENTENCES];
+  if (selectedQuizCats.has('all')) {
+    quizItems = shuffle([...all]);
+  } else {
+    quizItems = shuffle(all.filter(i => selectedQuizCats.has(i.cat)));
+  }
+  quizIndex = 0;
+}
+
+function initQuiz() {
+  buildQuizCatButtons();
+  loadQuizItems();
+  nextQuestion();
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function getWrongOptions(correct, pool, isVocab) {
+  const pool2 = pool.filter(p => {
+    const ans = quizReverse ? p.sk : p.en;
+    return ans !== correct;
+  });
+  return shuffle(pool2).slice(0, 3).map(p => quizReverse ? p.sk : p.en);
+}
+
+function nextQuestion() {
+  if (quizIndex >= quizItems.length) {
+    loadQuizItems();
+  }
+  const item = quizItems[quizIndex % quizItems.length];
+  quizIndex++;
+  quizAnswered = false;
+
+  const question = quizReverse ? item.en : item.sk;
+  const answer = quizReverse ? item.sk : item.en;
+
+  document.getElementById('q-type').textContent = quizReverse ? 'Prelož do slovenčiny' : 'Prelož do angličtiny';
+  document.getElementById('q-text').textContent = question;
+  document.getElementById('q-cat').textContent = '📂 ' + item.cat;
+  document.getElementById('next-btn').style.display = 'none';
+
+  const feedback = document.getElementById('q-feedback');
+  feedback.className = 'quiz-feedback';
+  feedback.textContent = '';
+
+  // build options
+  const pool = [...VOCAB, ...SENTENCES];
+  const wrongs = getWrongOptions(answer, pool, false);
+  const options = shuffle([answer, ...wrongs]);
+
+  const optDiv = document.getElementById('q-options');
+  optDiv.innerHTML = options.map(o => `
+    <button class="opt" onclick="checkAnswer(this, '${CSS.escape(o)}', '${CSS.escape(answer)}')">${o}</button>
+  `).join('');
+
+  const total = quizCorrect + quizWrong;
+  const pct = total === 0 ? 0 : Math.round((quizCorrect / total) * 100);
+  document.getElementById('quiz-progress').style.width = pct + '%';
+}
+
+function CSS_unescape(s) { return s; }
+
+function checkAnswer(btn, chosen, correct) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+
+  // decode escaped values
+  const chosenText = btn.textContent.trim();
+  const correctText = document.querySelector('.opt:not(.wrong)') ? correct : correct;
+
+  // find all buttons
+  const allOpts = document.querySelectorAll('.opt');
+  allOpts.forEach(b => {
+    b.disabled = true;
+    if (b.textContent.trim() === unescape(correct)) {
+      b.classList.add('correct');
+    }
+  });
+
+  const isCorrect = chosenText === unescape(correct);
+  if (isCorrect) {
+    quizCorrect++;
+    showFeedback(true, '✅ Správne!');
+    btn.classList.add('correct');
+  } else {
+    quizWrong++;
+    showFeedback(false, '❌ Nesprávne. Správna odpoveď: ' + unescape(correct));
+    btn.classList.add('wrong');
+  }
+
+  document.getElementById('score-ok').textContent = quizCorrect;
+  document.getElementById('score-fail').textContent = quizWrong;
+  document.getElementById('score-total').textContent = quizCorrect + quizWrong;
+  document.getElementById('next-btn').style.display = 'inline-block';
+}
+
+function unescape(s) {
+  const el = document.createElement('textarea');
+  el.innerHTML = s;
+  return el.value;
+}
+
+function showFeedback(ok, msg) {
+  const fb = document.getElementById('q-feedback');
+  fb.textContent = msg;
+  fb.className = 'quiz-feedback show ' + (ok ? 'ok' : 'fail');
+}
+
+function skipQuestion() {
+  nextQuestion();
+}
+
+function resetScore() {
+  quizCorrect = 0;
+  quizWrong = 0;
+  document.getElementById('score-ok').textContent = 0;
+  document.getElementById('score-fail').textContent = 0;
+  document.getElementById('score-total').textContent = 0;
+  loadQuizItems();
+  nextQuestion();
+}
+
+function toggleQuizMode() {
+  quizReverse = !quizReverse;
+  document.getElementById('quiz-dir-label').textContent = quizReverse ? 'EN → SK' : 'SK → EN';
+  nextQuestion();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+populateCatSelect('voc-cat', VOCAB);
+populateCatSelect('sen-cat', SENTENCES);
+renderVocab();
+renderSentences();
+</script>
+</body>
+</html>
